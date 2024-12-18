@@ -7,22 +7,33 @@ on:
 
 jobs:
   sonarqube:
-    runs-on: self-hosted  # Use the self-hosted runner
+    runs-on: self-hosted
+
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up JDK
+      - name: Install Java
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '11'
 
-      - name: SonarQube Scan
+      - name: Install SonarScanner
+        run: |
+          wget https://binaries.sonarsource.com/Distribution/sonarscanner/sonar-scanner-cli-4.6.2.2472-linux.zip
+          unzip sonar-scanner-cli-4.6.2.2472-linux.zip
+          sudo mv sonar-scanner-4.6.2.2472-linux /opt/sonar-scanner
+          export PATH=$PATH:/opt/sonar-scanner/bin
+          sonar-scanner --version
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: http://localhost:9000
+
+      - name: Run SonarQube Scan
         run: |
-          mvn clean verify sonar:sonar \
+          /opt/sonar-scanner/bin/sonar-scanner \
             -Dsonar.projectKey=my_project \
-            -Dsonar.projectName="My Project"
+            -Dsonar.projectName="My Project" \
+            -Dsonar.host.url=${{ env.SONAR_HOST_URL }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
