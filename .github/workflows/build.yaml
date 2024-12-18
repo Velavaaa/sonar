@@ -1,4 +1,4 @@
-name: SonarQube Docker Analysis
+name: SonarQube Analysis
 
 on:
   push:
@@ -7,25 +7,22 @@ on:
 
 jobs:
   sonarqube:
-    runs-on: ubuntu-latest
-
+    runs-on: self-hosted  # Use the self-hosted runner
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Start SonarQube Server
-        run: |
-          docker run -d --name sonarqube -p 9000:9000 -v ${{ github.workspace }}:/usr/src -w /usr/src sonarqube:community
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '11'
 
-      - name: Wait for SonarQube to be ready
-        run: sleep 20
-
-      - name: SonarQube Analysis
+      - name: SonarQube Scan
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: http://localhost:9000
         run: |
           mvn clean verify sonar:sonar \
-          -Dsonar.projectKey=my-project \
-          -Dsonar.host.url=http://localhost:9000 \
-          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-
-      - name: Stop SonarQube
-        run: docker stop sonarqube
+            -Dsonar.projectKey=my_project \
+            -Dsonar.projectName="My Project"
